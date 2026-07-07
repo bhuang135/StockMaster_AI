@@ -1,0 +1,36 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Secrets and local config
+.env
+*.env
+.streamlit/secrets.toml
+secrets.toml
+
+# Local data / exports
+*.csv
+*.xlsx
+*.xls
+*.db
+*.sqlite
+*.sqlite3
+exports/
+output/
+reports/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log

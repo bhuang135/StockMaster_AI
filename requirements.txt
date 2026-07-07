@@ -1,0 +1,12 @@
+streamlit
+pandas
+numpy
+plotly
+yfinance
+requests
+scikit-learn
+google-generativeai
+pandas-ta
+python-dateutil
+matplotlib
+python-docx
