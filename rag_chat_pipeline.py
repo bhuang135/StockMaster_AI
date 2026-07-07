@@ -441,6 +441,7 @@ def generate_chat_answer_with_citations(
     retrieved_docs: List[Dict[str, Any]],
     today: str,
     use_search_grounding: bool = True,
+    output_language_instruction: str = "Please answer in professional English.",
 ) -> str:
     """
     Generate a grounded answer. Primary evidence is the retrieved context
@@ -476,6 +477,9 @@ Today's date: {today}
 Ticker: {ticker}
 Company: {company_name}
 
+Output language requirement:
+{output_language_instruction}
+
 Answer using the retrieved context below as your primary evidence.
 
 Rules:
@@ -488,6 +492,7 @@ Rules:
 6. If sources support only part of the answer, answer only that supported part.
 7. Be clear, concise, and professional.
 8. Return markdown-friendly text.
+9. Keep ticker symbols, company legal names, URLs, and citation markers unchanged even when translating the explanation.
 {search_rules}
 After the answer, append the references section exactly once. Do not cite
 retrieved-context sources that are not in the retrieved context below.

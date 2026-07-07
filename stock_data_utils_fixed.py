@@ -14,7 +14,6 @@ from typing import Dict, List, Tuple, Any, Optional
 import requests
 import yfinance as yf
 import pandas as pd
-import pandas_ta as ta
 import google.generativeai as genai
 
 from rag_chat_pipeline import (
@@ -22,6 +21,7 @@ from rag_chat_pipeline import (
     retrieve_chat_documents,
     generate_chat_answer_with_citations
 )
+from translations import docx_text, language_instruction, metric_label, normalize_language_code
 
 
 from datetime import datetime
@@ -126,7 +126,13 @@ def get_stock_data(ticker: str) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         df.set_index("Date", inplace=True)
         df.columns = [str(col) for col in df.columns]
 
-        df.ta.rsi(append=True)
+        # Calculate 14-day RSI without pandas-ta.
+        # This avoids pandas-ta installation issues on Streamlit Community Cloud.
+        delta = df["Close"].diff()
+        gain = delta.clip(lower=0).rolling(window=14, min_periods=14).mean()
+        loss = (-delta.clip(upper=0)).rolling(window=14, min_periods=14).mean()
+        rs = gain / loss.replace(0, pd.NA)
+        df["RSI_14"] = 100 - (100 / (1 + rs))
 
         stock = yf.Ticker(ticker)
         info = stock.info if hasattr(stock, "info") else {}
@@ -1427,11 +1433,20 @@ def get_ai_investment_plan(
         positive_price: float,
         neutral_price: float,
         negative_price: float,
-        api_key: Optional[str] = None
+        api_key: Optional[str] = None,
+        language_code: str = "en",
     ) -> str:
 
+    language_code = normalize_language_code(language_code)
+    output_language_instruction = language_instruction(language_code)
+
     model = _get_gemini_model(api_key)
-    if not model: return "Missing Gemini API Key. 請在查詢介面輸入您的 Gemini API Key。"
+    if not model:
+        if language_code == "zh-Hant":
+            return "缺少 Gemini API Key。請在左側查詢介面輸入您的 Gemini API Key。"
+        if language_code == "zh-Hans":
+            return "缺少 Gemini API Key。请在左侧查询界面输入您的 Gemini API Key。"
+        return "Missing Gemini API Key. Please enter your Gemini API Key in the sidebar."
 
     reporting_date = datetime.now().strftime("%B %d, %Y")
     news_data = get_recent_news(ticker, max_items=10, api_key=api_key)
@@ -1473,8 +1488,11 @@ def get_ai_investment_plan(
 Role: 'StockMaster'.
 Ticker: {ticker} | Price: {current_price} | Profile: {model_desc}
 
-Provide an INTEGRATED ANALYSIS REPORT. 
-DO NOT use bracketed citations like [1] or [2]. 
+Output language requirement:
+{output_language_instruction}
+
+Provide an INTEGRATED ANALYSIS REPORT.
+DO NOT use bracketed citations like [1] or [2].
 
 Reporting Date: {reporting_date}
 
@@ -1557,36 +1575,44 @@ ADDITIONAL CONTEXT:
 from docx import Document
 from docx.shared import Pt, RGBColor
 
-def generate_docx_report(ticker, fundamentals, ai_content):
+def generate_docx_report(ticker, fundamentals, ai_content, language_code: str = "en"):
+    language_code = normalize_language_code(language_code)
+
     doc = Document()
-    doc.add_heading(f"StockMaster Research: {ticker}", 0)
-    
-    doc.add_heading("I. Fundamental Summary", level=1)
+    doc.add_heading(docx_text("title", language_code, ticker=ticker), 0)
+
+    doc.add_heading(docx_text("fundamental_summary", language_code), level=1)
     table = doc.add_table(rows=1, cols=2)
     table.style = "Table Grid"
     hdr_cells = table.rows[0].cells
-    hdr_cells[0].text, hdr_cells[1].text = "Metric", "Value"
-    
+    hdr_cells[0].text = metric_label("Metric", language_code) if metric_label("Metric", language_code) != "Metric" else ("指標" if language_code == "zh-Hant" else "指标" if language_code == "zh-Hans" else "Metric")
+    hdr_cells[1].text = "數值" if language_code == "zh-Hant" else "数值" if language_code == "zh-Hans" else "Value"
+
     metrics = ["P/E Ratio (TTM)", "Revenue Growth (YoY)", "ROE (Return on Equity)", "Debt/Equity"]
     for m in metrics:
         row = table.add_row().cells
-        row[0].text, row[1].text = m, str(fundamentals.get(m, "N/A"))
+        row[0].text = metric_label(m, language_code)
+        row[1].text = str(fundamentals.get(m, "N/A"))
 
-    doc.add_heading("II. Integrated Analysis & News Feed", level=1)
+    doc.add_heading(docx_text("integrated_analysis", language_code), level=1)
     for line in ai_content.split("\n"):
-        if line.startswith("##"): doc.add_heading(line.replace("##", "").strip(), level=2)
-        elif line.startswith("###"): doc.add_heading(line.replace("###", "").strip(), level=3)
+        stripped = line.strip()
+        if stripped.startswith("###"):
+            doc.add_heading(stripped.replace("###", "").strip(), level=3)
+        elif stripped.startswith("##"):
+            doc.add_heading(stripped.replace("##", "").strip(), level=2)
         else:
             p = doc.add_paragraph()
             parts = re.split(r"(\*\*.*?\*\*)", line)
             for part in parts:
-                if part.startswith("**"):
+                if part.startswith("**") and part.endswith("**"):
                     run = p.add_run(part.replace("**", ""))
                     run.bold = True
-                else: p.add_run(part)
+                else:
+                    p.add_run(part)
 
-    doc.add_heading("Disclaimer", level=2)
-    dis = doc.add_paragraph("This AI-generated report is for research only and does not constitute financial advice.")
+    doc.add_heading(docx_text("disclaimer_title", language_code), level=2)
+    dis = doc.add_paragraph(docx_text("disclaimer", language_code))
     run = dis.runs[0]
     run.font.color.rgb, run.font.size = RGBColor(128, 128, 128), Pt(9)
 
@@ -1610,7 +1636,7 @@ today = datetime.utcnow().strftime("%B %d, %Y")
 
 today = datetime.utcnow().strftime("%B %d, %Y")
 
-def get_ai_chat_response(ticker, question, api_key=None):
+def get_ai_chat_response(ticker, question, api_key=None, language_code: str = "en"):
     """
     Chatbot answer pipeline with retrieval + inline citations.
 
@@ -1618,18 +1644,19 @@ def get_ai_chat_response(ticker, question, api_key=None):
     - static company facts: CEO, sector, industry, headquarters, business summary
     - recent/live-ish evidence: latest market snapshot, recent news, options positioning
     """
+    language_code = normalize_language_code(language_code)
     ticker = str(ticker or "").strip().upper()
     question = str(question or "").strip()
 
     if not ticker:
-        return "Please provide a stock ticker."
+        return "請提供股票代號。" if language_code == "zh-Hant" else "请提供股票代码。" if language_code == "zh-Hans" else "Please provide a stock ticker."
 
     if not question:
-        return "Please enter a question."
+        return "請先輸入問題。" if language_code == "zh-Hant" else "请先输入问题。" if language_code == "zh-Hans" else "Please enter a question."
 
     model = _get_gemini_model(api_key)
     if not model:
-        return "Gemini API key missing. 請在查詢介面輸入您的 Gemini API Key。"
+        return "缺少 Gemini API Key。請在查詢介面輸入您的 Gemini API Key。" if language_code == "zh-Hant" else "缺少 Gemini API Key。请在查询界面输入您的 Gemini API Key。" if language_code == "zh-Hans" else "Gemini API key missing. Please enter your Gemini API Key in the sidebar."
 
     company_name = ticker
     fundamentals = {}
@@ -1673,6 +1700,10 @@ def get_ai_chat_response(ticker, question, api_key=None):
     )
 
     if not knowledge_base:
+        if language_code == "zh-Hant":
+            return f"我無法為 {ticker} 建立可檢索的分析脈絡。請確認股票代號後再試一次。"
+        if language_code == "zh-Hans":
+            return f"我无法为 {ticker} 建立可检索的分析上下文。请确认股票代码后再试一次。"
         return (
             f"I could not build a retrieval context for {ticker}. "
             f"Please verify the ticker symbol and try again."
@@ -1688,6 +1719,10 @@ def get_ai_chat_response(ticker, question, api_key=None):
     )
 
     if not retrieved_docs:
+        if language_code == "zh-Hant":
+            return f"我無法為你關於 {ticker} 的問題找到足夠相關的證據。請改問更具體的問題。"
+        if language_code == "zh-Hans":
+            return f"我无法为你关于 {ticker} 的问题找到足够相关的证据。请改问更具体的问题。"
         return (
             f"I could not retrieve relevant evidence for your question about {ticker}. "
             f"Please try a more specific question."
@@ -1702,7 +1737,8 @@ def get_ai_chat_response(ticker, question, api_key=None):
             question=question,
             retrieved_docs=retrieved_docs,
             today=today,
-            use_search_grounding=True
+            use_search_grounding=True,
+            output_language_instruction=language_instruction(language_code),
         )
     except Exception as e:
         return f"AI Error: {e}"

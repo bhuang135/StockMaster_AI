@@ -2,73 +2,73 @@
 
 ---
 
-# Step 1 — Enter Ticker
+## Step 1 — Choose Language
+
+Use the sidebar language selector:
+
+```text
+繁體中文 / 简体中文 / English
+```
+
+The app interface, AI output, chatbot response, and DOCX report will follow your selected language.
+
+---
+
+## Step 2 — Enter Gemini API Key
+
+Gemini-powered features require your own Gemini API Key.
+
+Without the key, the app can still show available market data, but AI report and chatbot features will be limited.
+
+---
+
+## Step 3 — Enter Ticker
 
 Examples:
 
-AAPL  
-MSFT  
-NVDA  
-TSLA  
+```text
+AAPL
+MSFT
+NVDA
+TSLA
+```
 
-Click:
-
-Analyze
-
----
-
-# Dashboard Sections
-
-## Fundamentals
-
-Displays:
-
-Company name  
-Sector  
-Market cap  
-Key metrics  
+Click Search / 查詢 / 查询.
 
 ---
 
-## Price Chart
+## Dashboard Sections
 
-Displays:
+### Fundamentals
 
-Historical price  
-Trend visualization  
+Displays company profile and key metrics.
 
----
+### Price Chart
 
-## Financial Statements
+Displays 5-year price trend and moving averages.
 
-Displays:
+### Financials & AI Plan
 
-Income statement  
-Balance sheet  
-Cash flow  
+Displays financial statements, scenario valuation, and Gemini AI investment analysis.
 
----
+### Chatbot
 
-## AI Investment Report
+Ask questions about the selected stock.
 
-Displays:
+Examples:
 
-Scenario valuation  
-Risk summary  
-AI insights  
+```text
+Who is the CEO of AAPL?
+Explain Tesla revenue trend.
+近期 NVDA 股價上漲的原因是什麼？
+```
 
----
+### Metric Guide
 
-## Chatbot
-
-Ask:
-
-Who is the CEO of AAPL?  
-Explain Tesla revenue trend  
-What caused price drop?  
+Explains the core financial metrics in the selected language.
 
 ---
 
-# Example Workflow
+## Export Report
 
-Enter ticker → View dashboard → Ask AI questions
+In the AI Plan tab, click the download button to export a `.docx` investment report in the selected language.

@@ -1,149 +1,79 @@
-# 📈 StockMaster AI  
+# 📈 StockMaster AI
 ## AI-Powered Investment Research & RAG Chat System
 
-StockMaster AI is an AI-driven financial intelligence platform that integrates:
-
-- Financial data retrieval
-- News sentiment analysis
-- Scenario valuation
-- Retrieval-Augmented Generation (RAG) chatbot
-- Interactive Streamlit dashboard
-
-This system demonstrates an end-to-end AI investment analysis workflow designed for structured decision support and financial insight generation.
+StockMaster AI is a multilingual Streamlit financial intelligence platform. It supports **繁體中文 / 简体中文 / English** in the app interface, AI investment report, chatbot response, and downloadable DOCX report.
 
 ---
 
-# 🚀 Project Overview
+## Core Features
 
-Modern investors face three major challenges:
-
-1. Too much fragmented financial information  
-2. Limited structured insights  
-3. Lack of explainable decision support  
-
-StockMaster AI solves this by combining:
-
-Market Data + Sentiment + Simulation + AI Reasoning
-
-Into a single unified platform.
+- Built-in language switcher: Traditional Chinese, Simplified Chinese, English
+- Financial data retrieval from Yahoo Finance through `yfinance`
+- 5-year historical stock price chart with moving averages
+- Key fundamentals and financial statement summary
+- News sentiment scoring and scenario valuation
+- Gemini AI institutional investment report
+- RAG chatbot with source-aware responses
+- DOCX report export in the selected app language
 
 ---
 
-# 🎯 Core Features
+## Main App File
 
-## 📊 Financial Data Retrieval
+```text
+stock_master_streamlit.py
+```
 
-Automatically retrieves:
-
-- Company fundamentals
-- Historical price data
-- Key financial metrics
-- Financial statements
-
-Sources:
-
-Yahoo Finance API  
-Public financial datasets
+Deploy this file as the Streamlit entry point.
 
 ---
 
-## 📰 News Sentiment Analysis
+## Project Structure
 
-The system evaluates recent news and produces:
-
-Positive / Neutral / Negative sentiment
-
-Score range:
-
--0.15 to +0.15
-
-Used in:
-
-- Valuation modeling
-- AI reasoning
-
----
-
-## 📈 Scenario Valuation Engine
-
-Simulates:
-
-Positive Scenario (Bull)  
-Neutral Scenario (Base)  
-Negative Scenario (Bear)
-
-Used to evaluate:
-
-Forward price expectations  
-Risk-adjusted projections
-
----
-
-## 🤖 RAG Chatbot
-
-Supports intelligent financial Q&A such as:
-
-Who is the CEO of AAPL?  
-What products does NVDA sell?  
-Explain Tesla revenue trend  
-What caused recent price movement?
-
-Pipeline:
-
-User Question → Query Expansion → Retrieval → Ranking → LLM Response
-
-Technologies:
-
-TF-IDF  
-Cosine Similarity  
-Gemini LLM
-
----
-
-# 🧩 Project Structure
-
+```text
 StockMaster_AI/
-
-stock_master_streamlit.py  
-stock_data_utils_fixed.py  
-rag_chat_pipeline.py  
-run_dashboard.bat  
-requirements.txt  
-
-README.md  
-ARCHITECTURE.md  
-SETUP.md  
-USER_GUIDE.md  
-
----
-
-# 🛠 Technology Stack
-
-Frontend:
-
-Streamlit  
-Plotly  
-
-Backend:
-
-Python  
-Pandas  
-NumPy  
-
-AI:
-
-Gemini LLM  
-TF-IDF Retrieval  
-Cosine Similarity  
+├── stock_master_streamlit.py       # Streamlit frontend and app controller
+├── stock_data_utils_fixed.py       # Data, valuation, Gemini, report generation
+├── rag_chat_pipeline.py            # RAG chatbot retrieval and answer generation
+├── translations.py                 # Built-in trilingual UI / prompt dictionary
+├── requirements.txt                # Python dependencies
+├── .streamlit/config.toml          # Streamlit cloud config
+├── GITHUB_DEPLOY.md                # GitHub + Streamlit deployment guide
+├── SETUP.md                        # Local setup guide
+├── USER_GUIDE.md                   # User workflow guide
+└── ARCHITECTURE.md                 # System architecture notes
+```
 
 ---
 
-# 📌 Summary
+## Run Locally
 
-StockMaster AI represents an:
+```bash
+pip install -r requirements.txt
+streamlit run stock_master_streamlit.py
+```
 
-End-to-End AI Financial Intelligence System
+Open:
 
-Combining:
+```text
+http://localhost:8501
+```
 
-Data + Analytics + AI + Visualization
+---
+
+## API Key Handling
+
+Gemini API Key is entered by the user in the sidebar. It is only stored in the current browser session and is not written to disk, code, or GitHub.
+
+---
+
+## Deployment
+
+Use Streamlit Community Cloud and set:
+
+```text
+Main file path: stock_master_streamlit.py
+Python version: 3.12+
+```
+
+See `GITHUB_DEPLOY.md` for the full workflow.
